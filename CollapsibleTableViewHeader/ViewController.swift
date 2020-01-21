@@ -57,13 +57,11 @@ class ViewController: UIViewController {
     
     lazy var searchView2: UIView = {
         let yourView = UISearchBar()
-        yourView.frame.size = CGSize(width: UIScreen.main.bounds.width, height: 100)
+        yourView.frame.size = CGSize(width: UIScreen.main.bounds.width, height: 60)
         return yourView
     }()
     
-    var heightV: CGFloat {
-        self.stackView.frame.height
-    }
+    var heightV: CGFloat = 0
     
     var heightF: CGFloat {
         self.searchView.frame.height
@@ -79,18 +77,30 @@ class ViewController: UIViewController {
         topScrollView.contentSize = CGSize(width: UIScreen.main.bounds.width, height: heightF)
         topScrollView.frame = CGRect(x: self.tableView.frame.minX, y: self.tableView.frame.minY, width: widthF, height: self.heightF)
         self.view.addSubview(topScrollView)
+        heightV = heightV + heightF
 
         self.view.bringSubviewToFront(self.topScrollView)
         self.view.sendSubviewToBack(self.tableView)
-        tableView.contentInset = UIEdgeInsets(top: self.heightF, left: 0, bottom: 0, right: 0)
+        tableView.contentInset = UIEdgeInsets(top: self.heightV, left: 0, bottom: 0, right: 0)
         self.view.layoutIfNeeded()
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
             self.stackView.insertArrangedSubview(self.searchView2, at: 0)
-            self.topScrollView.contentSize = CGSize(width: UIScreen.main.bounds.width, height: self.heightF + self.heightF)
-            self.topScrollView.frame = CGRect(x: self.tableView.frame.minX, y: self.tableView.frame.minY, width: self.widthF, height: self.heightF + self.heightF)
-            self.view.layoutIfNeeded()
+            self.heightV = self.heightV + self.searchView2.frame.height
+            self.addHeaderViewAndArrageTable(x: self.tableView.frame.minX, y: self.tableView.frame.minY, width: self.widthF, height: self.heightV)
         }
+    }
+    
+    func addHeaderViewAndArrageTable(x: CGFloat,
+                y: CGFloat,
+                width: CGFloat,
+                height: CGFloat,
+                indexPath: IndexPath = IndexPath(row: 0, section: 0)) {
+        self.topScrollView.contentSize = CGSize(width: width, height: height)
+        self.topScrollView.frame = CGRect(x: x, y: y, width: width, height: height)
+        self.tableView.contentInset = UIEdgeInsets(top: height, left: 0, bottom: 0, right: 0)
+        self.tableView.scrollToRow(at: indexPath, at: .top, animated: false)
+        self.topScrollView.layoutIfNeeded()
     }
 
 
@@ -113,10 +123,16 @@ extension ViewController: UITableViewDelegate, UITableViewDataSource {
     
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
         if scrollView == tableView {
-            let y = 100 - (scrollView.contentOffset.y + 100)
-            let height = min(max(y, 50), 100)
+            let y = heightV - (scrollView.contentOffset.y + heightV)
+            let height = min(max(y, 60), heightV)
             self.topScrollView.frame = CGRect(x: self.tableView.frame.minX, y: self.tableView.frame.minY, width: UIScreen.main.bounds.size.width, height: height)
         }
     }
 }
 
+extension UIScrollView {
+    func scrollToBottom(animated: Bool = false) {
+        let bottomOffset = CGPoint(x: 0, y: contentSize.height - bounds.size.height)
+        setContentOffset(bottomOffset, animated: animated)
+    }
+}
